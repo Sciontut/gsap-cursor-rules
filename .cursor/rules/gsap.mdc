@@ -1,0 +1,84 @@
+---
+description: Animate web interfaces with GSAP (GreenSock Animation Platform) — timelines, ScrollTrigger, scroll-driven narratives, micro-interactions, SVG and text animation. Apply when the user wants GSAP animation, scroll-triggered motion, timeline sequencing, or high-performance web animation.
+globs:
+alwaysApply: false
+---
+
+# GSAP Animation
+
+Authored from GSAP's official documented patterns. GSAP and all its plugins (ScrollTrigger, SplitText, Flip, MorphSVG, Draggable, etc.) are free as of the v3.13 / Webflow era. Verify current API against gsap.com/docs before relying on version-specific details.
+
+## Core model
+
+GSAP animates any numeric property of any object — DOM, SVG, canvas, WebGL, JS objects. Two building blocks:
+
+- **Tween** — a single animation: `gsap.to(target, vars)`, `gsap.from()`, `gsap.fromTo()`, `gsap.set()`.
+- **Timeline** — a container that sequences tweens with precise relative timing.
+
+```js
+// Tween: animate TO these values.
+gsap.to(".box", { x: 300, rotation: 360, duration: 1, ease: "power2.out" });
+
+// Timeline: sequence with position parameters.
+const tl = gsap.timeline({ defaults: { duration: 0.6, ease: "power2.out" } });
+tl.from(".title", { y: 40, opacity: 0 })
+  .from(".subtitle", { y: 20, opacity: 0 }, "-=0.3")   // overlap 0.3s
+  .from(".cta", { scale: 0.9, opacity: 0 }, "<");        // start with previous
+```
+
+## Position parameters (timeline timing)
+
+The third argument to a timeline method controls when it starts: absolute time (`1.5`), relative to end (`"-=0.3"` overlaps, `"+=0.5"` gaps), `"<"` (start of previous tween), `">"` (end of previous), or a label. This is the heart of orchestrated sequences.
+
+## Easing
+
+Easing carries personality. `power1`–`power4` (with `.in`/`.out`/`.inOut`), `back`, `elastic`, `expo`, `circ`, `sine`, `steps()`, and custom `CustomEase`. Default to `power2.out` for entrances, `power2.in` for exits. Avoid `linear` for UI (mechanical feel) except continuous loops.
+
+## ScrollTrigger
+
+The plugin for scroll-driven motion. Register before use: `gsap.registerPlugin(ScrollTrigger)`.
+
+```js
+gsap.to(".panel", {
+  xPercent: -100,
+  ease: "none",
+  scrollTrigger: {
+    trigger: ".container",
+    start: "top top",
+    end: "+=2000",
+    scrub: 1,        // tie progress to scrollbar (1 = 1s catch-up smoothing)
+    pin: true,       // lock the trigger while animating
+  },
+});
+```
+
+Key options: `trigger`, `start`/`end` (`"top center"`, `"+=500"`), `scrub` (link to scroll position), `pin` (lock element during the scroll range), `toggleActions` (play/pause/resume/reverse on enter/leave), `markers: true` for debugging. Use `pin` for sections that lock while content reveals; `scrub` for parallax and progress-tied reveals.
+
+## Common premium patterns
+
+**Staggered reveal:** `gsap.from(".item", { y: 30, opacity: 0, stagger: 0.08 })` — `stagger` can be a number or object (`{ each, from: "center", grid: "auto" }`).
+
+**Text animation:** SplitText splits headlines into chars/words/lines for cascading entrances. Always restore and respect reduced motion.
+
+**Horizontal scroll journey:** pin a container, translate `xPercent` of an inner track driven by `scrub`.
+
+**Magnetic / pointer interactions:** use `gsap.quickTo()` for high-frequency pointer-follow updates (far cheaper than creating tweens per mousemove).
+
+## Performance & hygiene
+
+- Animate `transform` (`x`, `y`, `scale`, `rotation`) and `opacity` — GSAP routes `x`/`y` to `translate3d` for compositing. Avoid animating layout properties.
+- Use `gsap.context()` (or the React `useGSAP()` hook) to scope animations and auto-clean on unmount — prevents leaks in SPA/React.
+- Batch many similar ScrollTriggers with `ScrollTrigger.batch()`.
+- Call `ScrollTrigger.refresh()` after layout changes that affect positions.
+- **Reduced motion:** gate non-essential motion. `gsap.matchMedia()` with `"(prefers-reduced-motion: reduce)"` to provide a calm/instant variant.
+
+```js
+const mm = gsap.matchMedia();
+mm.add("(prefers-reduced-motion: no-preference)", () => {
+  // full motion here; auto-reverted when the query stops matching
+});
+```
+
+## Framework notes
+
+React/Next: use the official `@gsap/react` `useGSAP()` hook — handles context scoping and cleanup. Pair with Lenis for smooth-scroll inertia under ScrollTrigger. Next.js: animations run client-side only (`"use client"`).
