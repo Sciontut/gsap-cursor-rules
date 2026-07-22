@@ -82,3 +82,35 @@ mm.add("(prefers-reduced-motion: no-preference)", () => {
 ## Framework notes
 
 React/Next: use the official `@gsap/react` `useGSAP()` hook — handles context scoping and cleanup. Pair with Lenis for smooth-scroll inertia under ScrollTrigger. Next.js: animations run client-side only (`"use client"`).
+
+## Load choreography (from hero reps)
+
+- Entrance sequences run on ONE delayed timeline. The opening beat of
+  stillness is a named value: `hero-beat: 2s` before anything moves.
+  (Authored: doubled from the common 1s — stillness reads as confidence.)
+- Sequential tweens on a load timeline OVERLAP via position parameters
+  (default `"-=0.5"`). Queued motion reads mechanical; braided motion
+  reads choreographed.
+- Clip-path reveals: animate polygon points from a fully closed position
+  to the full rectangle. Pair `duration: 1` with `ease: "circ.out"` for
+  a confident pop. Author start/end shapes at bennettfeely.com/clippy.
+- Character rises: `SplitText.create(target, { type: "chars" })`, then
+  `.from(split.chars, { yPercent: 200, stagger: 0.02, ease: "power2.out" })`
+  inside an `overflow-hidden` wrapper. The wrapper is the letterbox —
+  without it the trick is exposed.
+
+## Scroll-linked transforms
+
+- Scroll-driven motion lives on its OWN timeline with
+  `scrollTrigger: { scrub: true }` — never mixed onto the load timeline.
+  Load = theater (plays once). Scroll = puppet (user drives it).
+- Container tilts: `rotate` + `scale` + `yPercent` on the section
+  container, `start: "1% top"`, `end: "bottom top"`.
+
+## Pre-states are markup's job
+
+- Any element that animates IN must start in its pre-state in the markup
+  (`opacity-0` class, closed clip-path inline style) — never set the
+  pre-state from JS. If the animation is deleted, the page must fail
+  visible-but-unstyled, not invisible.
+  (Learned: an `opacity-1` typo silently killed the fade.)
